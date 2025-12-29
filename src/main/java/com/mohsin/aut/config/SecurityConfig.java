@@ -1,0 +1,46 @@
+package com.mohsin.aut.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import com.mohsin.aut.service.CustomUserDetails;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    private final CustomUserDetails customUserDetails;
+
+    public SecurityConfig(CustomUserDetails customUserDetails) {
+        this.customUserDetails = customUserDetails;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity.csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(request -> request
+                .requestMatchers("/register", "/login")  // Fixed: added leading / to "login"
+                .permitAll()
+                .anyRequest()
+                .authenticated())
+            .formLogin(form -> form
+                .loginProcessingUrl("/login")
+                .defaultSuccessUrl("/welcome", true)     // Fixed: added leading / to "welcome"
+                .permitAll())
+            .logout(logout -> logout
+                .logoutSuccessUrl("/login")
+                .permitAll())
+            .userDetailsService(customUserDetails);
+        
+        return httpSecurity.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
